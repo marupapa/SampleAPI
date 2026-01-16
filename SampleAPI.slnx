@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SampleAPI\SampleAPI.csproj" Type="C#" />
+  <Project Path="SampleAPI.ApplicationCore\SampleAPI.ApplicationCore.csproj" Type="C#" />
+  <Project Path="SampleAPI.Common\SampleAPI.Common.csproj" Type="C#" />
+  <Project Path="SampleAPI.Infrastructure\SampleAPI.Infrastructure.csproj" Type="C#" />
+</Solution>
