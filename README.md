@@ -1,188 +1,461 @@
-# SampleAPI Solution
+# SampleAPI Solution (.slnx)
 
-## 概要
-このソリューションは、.NET 10を使用した4層アーキテクチャのRESTful APIプロジェクトです。クリーンアーキテクチャの原則に従い、各層が明確な責任を持つように設計されています。
+## プロジェクト概要
 
-## プロジェクト構成
+SampleAPIは、.NET 10を使用したクリーンアーキテクチャベースのWebAPIソリューションです。**Visual Studio 2026の新しい.slnx形式**を採用し、レイヤー分離、依存性注入、セキュリティ、ロギング、データアクセスなどのベストプラクティスを実装しています。
 
-### 1. SampleAPI (プレゼンテーション層)
-- **役割**: APIエンドポイントの公開とHTTPリクエスト/レスポンスの処理
-- **主要コンポーネント**:
-  - `Areas/`: コントローラーの配置（機能別にグループ化）
-  - `Models/`: DTOとリクエスト/レスポンスモデル
-  - `Services/`: ビジネスロジックの実装
-  - `Interfaces/`: サービスインターフェース
-  - `Handlers/`: 認証ハンドラーとグローバル例外ハンドラー
-- **セキュリティ**: Authorizationヘッダーによる認証機構
-- **ドキュメント**: Swagger/OpenAPI統合
+## ソリューション形式について
 
-### 2. SampleAPI.ApplicationCore (アプリケーション層)
-- **役割**: ビジネスロジックのインターフェース定義とアプリケーション全体の契約
-- **主要コンポーネント**:
-  - `Interfaces/`: サービスとリポジトリのインターフェース定義
-  - `Models/`: ドメインモデルとエンティティ
-  - `Configurations/`: アプリケーション設定の定義
+このプロジェクトは**.slnx形式**（XML-based Solution Format）を使用しています。
 
-### 3. SampleAPI.Common (共通ライブラリ層)
-- **役割**: 全プロジェクトで共有される汎用的な機能の提供
-- **主要コンポーネント**:
-  - `Logging/`: NLogベースの共通ロギング機構
-  - `Extensions/`: 拡張メソッド
-  - `Helpers/`: ヘルパークラス
+### .slnx形式の利点
 
-### 4. SampleAPI.Infrastructure (インフラストラクチャ層)
-- **役割**: 外部リソースへのアクセスとデータ永続化
-- **主要コンポーネント**:
-  - `Data/`: データアクセス層（Dapper使用）
-  - `ExternalApi/`: 外部API接続クライアント
-  - `Configurations/`: インフラ設定管理
-- **データアクセス**:
-  - 参照: Dapper ORM
-  - 更新/追加: ストアドプロシージャ
-  - 接続文字列: AWS Secrets Manager
+* ✅ **XMLベース** - 人間が読みやすく編集しやすい
+* ✅ **シンプルな構造** - 従来の.slnより簡潔
+* ✅ **Gitフレンドリー** - マージコンフリクトが少ない
+* ✅ **将来性** - Microsoftが推奨する新形式
 
-## 環境構成
+### 要件
 
-プロジェクトは以下の4つの環境をサポートしています：
+* **Visual Studio 2022 17.10以降** または **Visual Studio 2026**
+* 古いバージョンのVisual Studioでは開けません
 
-1. **Local**: ローカル開発環境
-2. **Development**: 開発環境
-3. **Pre**: プレプロダクション環境
-4. **Live**: 本番環境
+## アーキテクチャ
 
-各環境の設定は `appsettings.{Environment}.json` で管理されます。
+このソリューションは4つのプロジェクトで構成されています:
 
-## 技術スタック
-
-- **.NET**: 10
-- **API Framework**: ASP.NET Core Web API
-- **ORM (Read)**: Dapper
-- **Database**: ストアドプロシージャ経由でのCUD操作
-- **Logging**: NLog
-- **Documentation**: Swagger/OpenAPI
-- **Secret Management**: AWS Secrets Manager
-- **CI/CD**: Jenkins
-
-## アーキテクチャ原則
-
-### 依存関係の方向
 ```
-SampleAPI
-    ↓
-SampleAPI.ApplicationCore
-    ↓
-SampleAPI.Infrastructure
-    ↓
-SampleAPI.Common
+SampleAPI.Solution/
+├── SampleAPI.slnx                      # XMLベースのソリューションファイル
+├── SampleAPI/                          # Web API プロジェクト
+├── SampleAPI.ApplicationCore/          # ビジネスロジック層
+├── SampleAPI.Common/                   # 共通ユーティリティ
+└── SampleAPI.Infrastructure/           # データアクセス層
 ```
 
-### レイヤー責務
+### プロジェクト詳細
 
-1. **プレゼンテーション層 (SampleAPI)**
-   - HTTPリクエスト/レスポンス処理
-   - 入力検証
-   - 認証・認可
-   - ルーティング
+#### 1. SampleAPI (Web API層)
 
-2. **アプリケーション層 (ApplicationCore)**
-   - ビジネスロジックの調整
-   - トランザクション管理
-   - ドメインルールの実装
+APIエンドポイントとHTTPリクエストハンドリングを担当します。
 
-3. **インフラストラクチャ層 (Infrastructure)**
-   - データ永続化
-   - 外部サービス統合
-   - キャッシング
+**構造:**
 
-4. **共通ライブラリ層 (Common)**
-   - ロギング
-   - ユーティリティ
-   - 共通拡張メソッド
-
-## セキュリティ
-
-- **認証**: Authorization HeaderベースのJWT認証
-- **認可**: ロールベースアクセス制御
-- **接続文字列管理**: AWS Secrets Managerによる暗号化保管
-- **例外処理**: グローバル例外ハンドラーによる一元管理
-
-## データアクセスパターン
-
-### 読み取り操作
-```csharp
-// Dapperを使用した軽量なデータ読み取り
-var results = await dapperHelper.QueryAsync<Model>(sql, parameters);
+```
+SampleAPI/
+├── Areas/
+│   └── V1/
+│       └── Controllers/          # APIコントローラー (バージョン別)
+├── Handlers/
+│   ├── AuthenticationHandler.cs # APIキー認証ハンドラー
+│   └── GlobalExceptionHandler.cs # グローバル例外処理
+├── Interfaces/                   # サービスインターフェース定義
+├── Models/                       # リクエスト/レスポンスモデル
+├── Services/                     # ビジネスロジック実装
+├── Properties/
+│   └── launchSettings.json       # 起動設定
+├── appsettings.json              # 共通設定
+├── appsettings.{Environment}.json # 環境別設定
+├── nlog.config                   # NLogロギング設定
+└── Program.cs                    # アプリケーションエントリーポイント
 ```
 
-### 書き込み操作
-```csharp
-// ストアドプロシージャを使用した安全な更新
-await procedureHelper.ExecuteProcedureAsync("sp_UpdateData", parameters);
+**主要機能:**
+
+* RESTful APIエンドポイント
+* Swagger/OpenAPI ドキュメンテーション
+* APIキーベース認証 (Authorizationヘッダー)
+* グローバル例外ハンドリング
+* 環境別設定管理 (Local/Development/Pre/Live)
+* 統合ロギング (NLog)
+
+**エンドポイント例:**
+
+* `GET /api/v1/users` - 全ユーザー取得
+* `GET /api/v1/users/{id}` - ユーザー詳細取得
+* `POST /api/v1/users` - ユーザー作成
+* `PUT /api/v1/users/{id}` - ユーザー更新
+* `DELETE /api/v1/users/{id}` - ユーザー削除
+
+#### 2. SampleAPI.ApplicationCore (アプリケーションコア層)
+
+ドメインモデル、インターフェース、設定クラスを定義します。
+
+**構造:**
+
+```
+SampleAPI.ApplicationCore/
+├── Interfaces/
+│   ├── IUserService.cs           # ビジネスロジックインターフェース
+│   └── IUserRepository.cs        # データリポジトリインターフェース
+├── Models/
+│   └── User.cs                   # ドメインモデル
+└── Configurations/
+    └── AppSettings.cs            # アプリケーション設定クラス
 ```
 
-## ロギング
+#### 3. SampleAPI.Common (共通ライブラリ層)
 
-NLogを使用した構造化ロギング:
-- アプリケーションログ
-- エラーログ
-- パフォーマンスログ
-- 監査ログ
+全プロジェクトで共有する共通機能を提供します。
 
-## Swagger統合
+**構造:**
 
-すべてのAPIエンドポイントは以下で確認可能:
-- Local: `https://localhost:5001/swagger`
-- Development: `https://dev-api.example.com/swagger`
+```
+SampleAPI.Common/
+└── Logging/
+    ├── ILoggerService.cs         # ロギングインターフェース
+    └── LoggerService.cs          # NLogロギング実装
+```
 
-## デプロイメント
+#### 4. SampleAPI.Infrastructure (インフラストラクチャ層)
 
-### Jenkins Pipeline
-各環境へのデプロイはJenkinsパイプラインを通じて自動化されています:
+データアクセス、外部API接続、AWS統合を担当します。
 
-1. ビルド
-2. ユニットテスト実行
-3. パッケージング
-4. 環境別設定の適用
-5. デプロイ
+**構造:**
 
-### 環境変数
-- `ASPNETCORE_ENVIRONMENT`: 実行環境の指定
-- `AWS_REGION`: AWS Secrets Managerのリージョン
-- `SECRET_NAME`: シークレット名
+```
+SampleAPI.Infrastructure/
+├── Data/
+│   ├── DapperRepository.cs           # Dapper SELECT操作用
+│   ├── StoredProcedureExecutor.cs    # ストアドプロシージャ実行用
+│   └── UserRepository.cs             # ユーザーデータリポジトリ
+├── ExternalApi/
+│   └── ExternalApiClient.cs          # 外部API接続クライアント
+└── Configurations/
+    └── SecretsManagerService.cs      # AWS Secrets Manager連携
+```
 
-## 開発ガイドライン
+## セットアップ手順
 
-### 新しいエンドポイントの追加
+### 前提条件
 
-1. `SampleAPI.ApplicationCore` にインターフェースとモデルを定義
-2. `SampleAPI` にサービスとコントローラーを実装
-3. 必要に応じて `SampleAPI.Infrastructure` にリポジトリを追加
-4. Swaggerアノテーションを追加してドキュメント化
+* **.NET 10 SDK**
+* **Visual Studio 2022 17.10以降** または **Visual Studio 2026**
+* SQL Server (2019以降推奨)
+* AWS CLI (本番環境のみ)
 
-### 命名規則
+### 1. ソリューションを開く
 
-- **Controllers**: `{Feature}Controller` (例: `UserController`)
-- **Services**: `{Feature}Service` (例: `UserService`)
-- **Interfaces**: `I{Name}` (例: `IUserService`)
-- **Models**: PascalCase (例: `UserModel`)
-- **ファイル**: 1クラス = 1ファイル
+Visual Studio 2026で `SampleAPI.slnx` を開きます。
 
-## トラブルシューティング
+```bash
+# または コマンドラインから
+cd SampleAPI.Solution
+code .  # VS Codeの場合
+```
 
-### よくある問題
+### 2. データベースセットアップ
 
-1. **DB接続エラー**
-   - AWS Secrets Managerの設定を確認
-   - ネットワーク接続を確認
+```sql
+-- データベース作成
+CREATE DATABASE SampleDB_Local;
+GO
 
-2. **認証エラー**
-   - Authorizationヘッダーの形式を確認
-   - トークンの有効期限を確認
+USE SampleDB_Local;
+GO
+
+-- テーブル作成
+CREATE TABLE Users (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL,
+    Email NVARCHAR(100) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL
+);
+GO
+
+-- ストアドプロシージャ作成
+CREATE PROCEDURE sp_InsertUser
+    @Username NVARCHAR(50),
+    @Email NVARCHAR(100),
+    @NewId INT OUTPUT
+AS
+BEGIN
+    INSERT INTO Users (Username, Email, CreatedAt)
+    VALUES (@Username, @Email, GETUTCDATE());
+    
+    SET @NewId = SCOPE_IDENTITY();
+END
+GO
+
+CREATE PROCEDURE sp_UpdateUser
+    @Id INT,
+    @Username NVARCHAR(50),
+    @Email NVARCHAR(100)
+AS
+BEGIN
+    UPDATE Users
+    SET Username = @Username,
+        Email = @Email,
+        UpdatedAt = GETUTCDATE()
+    WHERE Id = @Id;
+END
+GO
+
+CREATE PROCEDURE sp_DeleteUser
+    @Id INT
+AS
+BEGIN
+    DELETE FROM Users WHERE Id = @Id;
+END
+GO
+```
+
+### 3. 設定ファイル編集
+
+`appsettings.Local.json` を編集してデータベース接続文字列を設定:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=SampleDB_Local;User Id=sa;Password=YourPassword;TrustServerCertificate=True;"
+  },
+  "Api": {
+    "Authentication": {
+      "ValidApiKeys": [
+        "local-test-key-12345"
+      ]
+    }
+  }
+}
+```
+
+### 4. 依存関係の復元とビルド
+
+```bash
+dotnet restore
+dotnet build
+```
+
+### 5. 実行
+
+Visual Studioで `Local` プロファイルを選択して実行、またはコマンドラインから:
+
+```bash
+cd SampleAPI
+dotnet run --environment Local
+```
+
+### 6. Swaggerで動作確認
+
+ブラウザで以下にアクセス:
+
+```
+https://localhost:7001
+```
+
+## APIの使用方法
+
+### 認証
+
+全エンドポイントでAuthorizationヘッダーが必要です:
+
+```
+Authorization: Bearer local-test-key-12345
+```
+
+### Swaggerでのテスト
+
+1. https://localhost:7001 にアクセス
+2. 「Authorize」ボタンをクリック
+3. `Bearer local-test-key-12345` を入力
+4. エンドポイントをテスト
+
+### curlでのテスト
+
+```bash
+# ユーザー一覧取得
+curl -X GET "https://localhost:7001/api/v1/users" \
+     -H "Authorization: Bearer local-test-key-12345"
+
+# ユーザー作成
+curl -X POST "https://localhost:7001/api/v1/users" \
+     -H "Authorization: Bearer local-test-key-12345" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "username": "testuser",
+       "email": "test@example.com"
+     }'
+```
+
+## ソリューション名の変更手順
+
+このテンプレートを別のプロジェクト名で使用する場合の手順です。
+
+### 例: `SampleAPI` → `NXJpki` に変更する場合
+
+#### 1. ソリューションファイルの変更
+
+```bash
+mv SampleAPI.slnx NXJpki.slnx
+```
+
+#### 2. プロジェクトのディレクトリ名を変更
+
+```bash
+mv SampleAPI NXJpki
+mv SampleAPI.ApplicationCore NXJpki.ApplicationCore
+mv SampleAPI.Common NXJpki.Common
+mv SampleAPI.Infrastructure NXJpki.Infrastructure
+```
+
+#### 3. 各プロジェクトファイル（.csproj）の名前を変更
+
+```bash
+mv NXJpki/SampleAPI.csproj NXJpki/NXJpki.csproj
+mv NXJpki.ApplicationCore/SampleAPI.ApplicationCore.csproj NXJpki.ApplicationCore/NXJpki.ApplicationCore.csproj
+mv NXJpki.Common/SampleAPI.Common.csproj NXJpki.Common/NXJpki.Common.csproj
+mv NXJpki.Infrastructure/SampleAPI.Infrastructure.csproj NXJpki.Infrastructure/NXJpki.Infrastructure.csproj
+```
+
+#### 4. .slnxファイル内のプロジェクト参照を更新
+
+`NXJpki.slnx` を開いて、以下のように変更:
+
+**変更前:**
+```xml
+<Project Path="SampleAPI\SampleAPI.csproj" />
+<Project Path="SampleAPI.ApplicationCore\SampleAPI.ApplicationCore.csproj" />
+<Project Path="SampleAPI.Common\SampleAPI.Common.csproj" />
+<Project Path="SampleAPI.Infrastructure\SampleAPI.Infrastructure.csproj" />
+```
+
+**変更後:**
+```xml
+<Project Path="NXJpki\NXJpki.csproj" />
+<Project Path="NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
+<Project Path="NXJpki.Common\NXJpki.Common.csproj" />
+<Project Path="NXJpki.Infrastructure\NXJpki.Infrastructure.csproj" />
+```
+
+#### 5. 各.csprojファイル内のプロジェクト参照を更新
+
+**NXJpki/NXJpki.csproj:**
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
+  <ProjectReference Include="..\NXJpki.Common\NXJpki.Common.csproj" />
+  <ProjectReference Include="..\NXJpki.Infrastructure\NXJpki.Infrastructure.csproj" />
+</ItemGroup>
+```
+
+**NXJpki.Infrastructure/NXJpki.Infrastructure.csproj:**
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
+  <ProjectReference Include="..\NXJpki.Common\NXJpki.Common.csproj" />
+</ItemGroup>
+```
+
+#### 6. 名前空間（Namespace）の一括置換
+
+全ファイルで名前空間を検索・置換:
+
+```bash
+# Linuxの場合
+find . -type f -name "*.cs" -exec sed -i 's/namespace SampleAPI/namespace NXJpki/g' {} +
+find . -type f -name "*.cs" -exec sed -i 's/using SampleAPI/using NXJpki/g' {} +
+
+# Windowsの場合（PowerShell）
+Get-ChildItem -Recurse -Filter *.cs | ForEach-Object {
+    (Get-Content $_.FullName) -replace 'namespace SampleAPI', 'namespace NXJpki' | Set-Content $_.FullName
+    (Get-Content $_.FullName) -replace 'using SampleAPI', 'using NXJpki' | Set-Content $_.FullName
+}
+```
+
+または、Visual Studioの「フォルダーを指定して置換」機能を使用:
+- `Ctrl + Shift + H`
+- 検索: `SampleAPI`
+- 置換: `NXJpki`
+- 対象: `*.cs`
+
+#### 7. appsettings.jsonファイルの確認
+
+必要に応じて、以下のファイルのプロジェクト固有の設定を更新:
+- `appsettings.json`
+- `appsettings.Local.json`
+- `appsettings.Development.json`
+- `appsettings.Pre.json`
+- `appsettings.Live.json`
+
+#### 8. nlog.configの確認
+
+`nlog.config` のログファイルパスを確認:
+
+```xml
+<target name="file" xsi:type="File" fileName="logs/nxjpki-${shortdate}.log" />
+```
+
+#### 9. ビルドとテスト
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project NXJpki --environment Local
+```
+
+#### 10. データベースオブジェクトの更新（必要に応じて）
+
+ストアドプロシージャやテーブル名に `SampleAPI` プレフィックスがある場合は更新してください。
+
+### チェックリスト
+
+変更後、以下を確認してください:
+
+- [ ] ソリューションファイル名が変更されている
+- [ ] 4つのプロジェクトディレクトリ名が変更されている
+- [ ] 4つの.csprojファイル名が変更されている
+- [ ] .slnx内のプロジェクトパスが更新されている
+- [ ] 各.csprojのProjectReference参照が更新されている
+- [ ] すべての.csファイルの名前空間が更新されている
+- [ ] appsettings系ファイルの設定が確認されている
+- [ ] nlog.configのログファイル名が確認されている
+- [ ] `dotnet build` が成功する
+- [ ] アプリケーションが正常に起動する
+
+## 環境管理
+
+4つの環境をサポート:
+
+| 環境 | 用途 | Secrets Manager | Swagger |
+| --- | --- | --- | --- |
+| **Local** | ローカル開発 | 使用しない | 有効 |
+| **Development** | 開発環境 | 使用する | 有効 |
+| **Pre** | ステージング | 使用する | 無効 |
+| **Live** | 本番環境 | 使用する | 無効 |
+
+## AWS Secrets Manager設定 (本番環境)
+
+```bash
+aws secretsmanager create-secret \
+    --name sampleapi/live/database/connectionstring \
+    --description "SampleAPI Live Database Connection String" \
+    --secret-string '{"connectionString":"Server=xxx;Database=xxx;User Id=xxx;Password=xxx;"}' \
+    --region ap-northeast-1
+```
+
+## プロジェクトの特徴
+
+✅ **.slnx形式** - 最新のXMLベースソリューション  
+✅ **クリーンアーキテクチャ** - レイヤー分離設計  
+✅ **Dapper + ストアドプロシージャ** - 高速データアクセス  
+✅ **APIキー認証** - セキュアなエンドポイント  
+✅ **Swagger統合** - 自動APIドキュメント  
+✅ **NLogロギング** - 統合ロギング  
+✅ **環境別設定** - 4環境対応  
+✅ **AWS Secrets Manager** - セキュアな接続文字列管理
 
 ## ライセンス
 
-内部使用のみ
+このプロジェクトはサンプルコードです。自由に使用・修正できます。
 
-## 連絡先
+## 変更履歴
 
-プロジェクトに関する質問は開発チームまでお問い合わせください。
+### v1.0.0 (2026-01-15)
+
+* 初回リリース (.slnx形式)
+* 基本的なCRUD API実装
+* 認証/認可機能
+* ロギング統合
+* AWS Secrets Manager統合
+* 環境別設定管理
