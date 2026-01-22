@@ -282,35 +282,35 @@ curl -X POST "https://localhost:7001/api/v1/users" \
 
 このテンプレートを別のプロジェクト名で使用する場合の手順です。
 
-### 例: `SampleAPI` → `NXJpki` に変更する場合
+### 例: `SampleAPI` → `SampleAPI2` に変更する場合
 
 #### 1. ソリューションファイルの変更
 
 ```bash
-mv SampleAPI.slnx NXJpki.slnx
+mv SampleAPI.slnx SampleAPI2.slnx
 ```
 
 #### 2. プロジェクトのディレクトリ名を変更
 
 ```bash
-mv SampleAPI NXJpki
-mv SampleAPI.ApplicationCore NXJpki.ApplicationCore
-mv SampleAPI.Common NXJpki.Common
-mv SampleAPI.Infrastructure NXJpki.Infrastructure
+mv SampleAPI SampleAPI2
+mv SampleAPI.ApplicationCore SampleAPI2.ApplicationCore
+mv SampleAPI.Common SampleAPI2.Common
+mv SampleAPI.Infrastructure SampleAPI2.Infrastructure
 ```
 
 #### 3. 各プロジェクトファイル（.csproj）の名前を変更
 
 ```bash
-mv NXJpki/SampleAPI.csproj NXJpki/NXJpki.csproj
-mv NXJpki.ApplicationCore/SampleAPI.ApplicationCore.csproj NXJpki.ApplicationCore/NXJpki.ApplicationCore.csproj
-mv NXJpki.Common/SampleAPI.Common.csproj NXJpki.Common/NXJpki.Common.csproj
-mv NXJpki.Infrastructure/SampleAPI.Infrastructure.csproj NXJpki.Infrastructure/NXJpki.Infrastructure.csproj
+mv SampleAPI2/SampleAPI.csproj SampleAPI2/SampleAPI2.csproj
+mv SampleAPI2.ApplicationCore/SampleAPI.ApplicationCore.csproj SampleAPI2.ApplicationCore/SampleAPI2.ApplicationCore.csproj
+mv SampleAPI2.Common/SampleAPI.Common.csproj SampleAPI2.Common/SampleAPI2.Common.csproj
+mv SampleAPI2.Infrastructure/SampleAPI.Infrastructure.csproj SampleAPI2.Infrastructure/SampleAPI2.Infrastructure.csproj
 ```
 
 #### 4. .slnxファイル内のプロジェクト参照を更新
 
-`NXJpki.slnx` を開いて、以下のように変更:
+`SampleAPI2.slnx` を開いて、以下のように変更:
 
 **変更前:**
 ```xml
@@ -322,28 +322,28 @@ mv NXJpki.Infrastructure/SampleAPI.Infrastructure.csproj NXJpki.Infrastructure/N
 
 **変更後:**
 ```xml
-<Project Path="NXJpki\NXJpki.csproj" />
-<Project Path="NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
-<Project Path="NXJpki.Common\NXJpki.Common.csproj" />
-<Project Path="NXJpki.Infrastructure\NXJpki.Infrastructure.csproj" />
+<Project Path="SampleAPI2\SampleAPI2.csproj" />
+<Project Path="SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
+<Project Path="SampleAPI2.Common\SampleAPI2.Common.csproj" />
+<Project Path="SampleAPI2.Infrastructure\SampleAPI2.Infrastructure.csproj" />
 ```
 
 #### 5. 各.csprojファイル内のプロジェクト参照を更新
 
-**NXJpki/NXJpki.csproj:**
+**SampleAPI2/SampleAPI2.csproj:**
 ```xml
 <ItemGroup>
-  <ProjectReference Include="..\NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
-  <ProjectReference Include="..\NXJpki.Common\NXJpki.Common.csproj" />
-  <ProjectReference Include="..\NXJpki.Infrastructure\NXJpki.Infrastructure.csproj" />
+  <ProjectReference Include="..\SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
+  <ProjectReference Include="..\SampleAPI2.Common\SampleAPI2.Common.csproj" />
+  <ProjectReference Include="..\SampleAPI2.Infrastructure\SampleAPI2.Infrastructure.csproj" />
 </ItemGroup>
 ```
 
-**NXJpki.Infrastructure/NXJpki.Infrastructure.csproj:**
+**SampleAPI2.Infrastructure/SampleAPI2.Infrastructure.csproj:**
 ```xml
 <ItemGroup>
-  <ProjectReference Include="..\NXJpki.ApplicationCore\NXJpki.ApplicationCore.csproj" />
-  <ProjectReference Include="..\NXJpki.Common\NXJpki.Common.csproj" />
+  <ProjectReference Include="..\SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
+  <ProjectReference Include="..\SampleAPI2.Common\SampleAPI2.Common.csproj" />
 </ItemGroup>
 ```
 
@@ -353,20 +353,20 @@ mv NXJpki.Infrastructure/SampleAPI.Infrastructure.csproj NXJpki.Infrastructure/N
 
 ```bash
 # Linuxの場合
-find . -type f -name "*.cs" -exec sed -i 's/namespace SampleAPI/namespace NXJpki/g' {} +
-find . -type f -name "*.cs" -exec sed -i 's/using SampleAPI/using NXJpki/g' {} +
+find . -type f -name "*.cs" -exec sed -i 's/namespace SampleAPI/namespace SampleAPI2/g' {} +
+find . -type f -name "*.cs" -exec sed -i 's/using SampleAPI/using SampleAPI2/g' {} +
 
 # Windowsの場合（PowerShell）
 Get-ChildItem -Recurse -Filter *.cs | ForEach-Object {
-    (Get-Content $_.FullName) -replace 'namespace SampleAPI', 'namespace NXJpki' | Set-Content $_.FullName
-    (Get-Content $_.FullName) -replace 'using SampleAPI', 'using NXJpki' | Set-Content $_.FullName
+    (Get-Content $_.FullName) -replace 'namespace SampleAPI', 'namespace SampleAPI2' | Set-Content $_.FullName
+    (Get-Content $_.FullName) -replace 'using SampleAPI', 'using SampleAPI2' | Set-Content $_.FullName
 }
 ```
 
 または、Visual Studioの「フォルダーを指定して置換」機能を使用:
 - `Ctrl + Shift + H`
 - 検索: `SampleAPI`
-- 置換: `NXJpki`
+- 置換: `SampleAPI2`
 - 対象: `*.cs`
 
 #### 7. appsettings.jsonファイルの確認
@@ -383,7 +383,7 @@ Get-ChildItem -Recurse -Filter *.cs | ForEach-Object {
 `nlog.config` のログファイルパスを確認:
 
 ```xml
-<target name="file" xsi:type="File" fileName="logs/nxjpki-${shortdate}.log" />
+<target name="file" xsi:type="File" fileName="logs/SampleAPI2-${shortdate}.log" />
 ```
 
 #### 9. ビルドとテスト
@@ -391,7 +391,7 @@ Get-ChildItem -Recurse -Filter *.cs | ForEach-Object {
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project NXJpki --environment Local
+dotnet run --project SampleAPI2 --environment Local
 ```
 
 #### 10. データベースオブジェクトの更新（必要に応じて）
