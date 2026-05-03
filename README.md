@@ -1,6 +1,6 @@
 # SampleAPI
 
-SampleAPIは、レイヤードアーキテクチャ、JWT Bearer認証、DapperによるSQL Serverアクセス、ストアドプロシージャ、NLog、Swagger、AWS Secrets Manager連携を使用した .NET 10 Web API サンプルです。
+SampleAPIは、レイヤードアーキテクチャ、JWT Bearer認証、DapperによるSQL Serverアクセス、ストアドプロシージャ、NLog、OpenAPI、AWS Secrets Manager連携を使用した .NET 10 Web API サンプルです。
 
 このソリューションは、XMLベースの `.slnx` 形式を使用しています。
 
@@ -54,7 +54,7 @@ SampleAPI/
 
 このソリューションは4つのプロジェクトに分かれています。
 
-- `SampleAPI`: プレゼンテーション層です。コントローラー、DTO、サービス実装、ミドルウェア登録、Swagger、JWT設定、ヘルスチェックエンドポイント、アプリケーション起動処理を含みます。
+- `SampleAPI`: プレゼンテーション層です。コントローラー、DTO、サービス実装、ミドルウェア登録、OpenAPI、JWT設定、ヘルスチェックエンドポイント、アプリケーション起動処理を含みます。
 - `SampleAPI.ApplicationCore`: アプリケーションの契約とドメインモデルを定義します。
 - `SampleAPI.Infrastructure`: SQL Serverアクセス、ストアドプロシージャ実行、外部HTTP APIクライアント、AWS Secrets Manager連携を担当します。
 - `SampleAPI.Common`: ロギング、ヘルパー、拡張メソッドなどの共通機能を提供します。
@@ -123,10 +123,10 @@ dotnet run --project SampleAPI/SampleAPI.csproj --launch-profile http
 ASPNETCORE_ENVIRONMENT=Local dotnet run --project SampleAPI/SampleAPI.csproj --urls http://127.0.0.1:5000
 ```
 
-Swaggerは `Local` と `Development` 環境で有効です。
+OpenAPIドキュメントは `Local` と `Development` 環境で有効です。
 
 ```text
-http://localhost:5000/swagger
+http://localhost:5000/openapi/v1.json
 ```
 
 ## ヘルスチェック
@@ -186,7 +186,7 @@ Authorization: Bearer {jwt-token}
 - `JwtSettings:Issuer`
 - `JwtSettings:Audience`
 
-SwaggerにはBearerセキュリティ定義が設定されているため、有効なJWTがあればSwagger UIから認証付きAPIをテストできます。
+OpenAPIドキュメントは `Local` と `Development` 環境で公開されます。API呼び出し時は、有効なJWTを `Authorization` ヘッダーに指定してください。
 
 ## データアクセス
 
@@ -227,7 +227,7 @@ dotnet test SampleAPI.slnx --configuration Release --no-build
 
 ## 環境
 
-| 環境 | 用途 | Swagger | DBシークレット取得元 |
+| 環境 | 用途 | OpenAPI | DBシークレット取得元 |
 | --- | --- | --- | --- |
 | Local | ローカル開発 | 有効 | `appsettings.Local.json` |
 | Development | 共有開発環境 | 有効 | AWS Secrets Manager、その後フォールバック設定 |
@@ -240,7 +240,7 @@ dotnet test SampleAPI.slnx --configuration Release --no-build
 - `.slnx` ソリューション形式
 - レイヤードアーキテクチャ
 - JWT Bearer認証
-- Swagger/OpenAPI
+- OpenAPI
 - グローバル例外ハンドリング
 - NLogロギング
 - Dapperによる読み取り

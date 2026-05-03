@@ -9,7 +9,6 @@ using SampleAPI.Common.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
 using System.Text;
@@ -82,56 +81,8 @@ try
 
     builder.Services.AddAuthorization();
 
-    // Swagger設定
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen(options =>
-    {
-        options.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Title = "Sample API",
-            Version = "v1",
-            Description = "Sample API for demonstration purposes",
-            Contact = new OpenApiContact
-            {
-                Name = "Development Team",
-                Email = "dev@example.com"
-            }
-        });
-
-        // JWT認証設定
-        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header,
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
-        });
-
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                Array.Empty<string>()
-            }
-        });
-
-        // XMLコメント設定
-        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-        if (File.Exists(xmlPath))
-        {
-            options.IncludeXmlComments(xmlPath);
-        }
-    });
+    // OpenAPI設定
+    builder.Services.AddOpenApi("v1");
 
     // サービス登録
     builder.Services.AddScoped<IUserService, UserService>();
@@ -162,12 +113,7 @@ try
     // ミドルウェアパイプライン
     if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Local")
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Sample API v1");
-            options.RoutePrefix = "swagger";
-        });
+        app.MapOpenApi();
     }
 
     app.UseExceptionHandler();

@@ -101,7 +101,7 @@ SampleAPI-Solution/
 - Authentication & Authorization
 - API routing and versioning
 - Input validation
-- Swagger documentation
+- OpenAPI documentation
 
 ### 2. SampleAPI.ApplicationCore (Domain Layer)
 - Business logic interfaces
@@ -125,7 +125,7 @@ SampleAPI-Solution/
 
 ✅ 4-Layer Clean Architecture
 ✅ JWT Bearer Authentication with Authorization Header
-✅ Swagger/OpenAPI Documentation
+✅ OpenAPI Documentation
 ✅ Global Exception Handling
 ✅ NLog Structured Logging
 ✅ Dapper for Database Reads
