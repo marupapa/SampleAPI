@@ -39,7 +39,6 @@ SampleAPI-Solution/
 │   │   └── IUserService.cs
 │   │
 │   └── Handlers/                           # Middleware Handlers
-│       ├── AuthenticationHandler.cs        # JWT Authentication Handler
 │       └── GlobalExceptionHandler.cs       # Global Exception Handler
 │
 ├── SampleAPI.ApplicationCore/              # Application Core Layer
@@ -125,7 +124,7 @@ SampleAPI-Solution/
 ## Key Features Implemented
 
 ✅ 4-Layer Clean Architecture
-✅ JWT Authentication with Authorization Header
+✅ JWT Bearer Authentication with Authorization Header
 ✅ Swagger/OpenAPI Documentation
 ✅ Global Exception Handling
 ✅ NLog Structured Logging
@@ -155,7 +154,7 @@ SampleAPI-Solution/
 dotnet restore
 
 # Build solution
-dotnet build SampleAPI.sln --configuration Release
+dotnet build SampleAPI.slnx --configuration Release
 
 # Run tests
 dotnet test

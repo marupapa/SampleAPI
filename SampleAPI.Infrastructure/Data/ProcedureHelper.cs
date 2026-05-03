@@ -12,23 +12,22 @@ namespace SampleAPI.Infrastructure.Data;
 /// </summary>
 public class ProcedureHelper : IProcedureHelper
 {
-    private readonly string _connectionString;
+    private readonly SecretsManagerHelper _secretsManager;
     private readonly ILoggerService _logger;
     private readonly int _commandTimeout;
 
     public ProcedureHelper(IConfiguration configuration, ILoggerService logger)
     {
         _logger = logger;
-        var secretsManager = new SecretsManagerHelper(configuration, logger);
-        _connectionString = secretsManager.GetConnectionStringAsync().GetAwaiter().GetResult();
+        _secretsManager = new SecretsManagerHelper(configuration, logger);
         
         var timeoutValue = configuration["DatabaseSettings:CommandTimeout"];
         _commandTimeout = !string.IsNullOrEmpty(timeoutValue) ? int.Parse(timeoutValue) : 30;
     }
 
-    private IDbConnection CreateConnection()
+    private static IDbConnection CreateConnection(string connectionString)
     {
-        return new SqlConnection(_connectionString);
+        return new SqlConnection(connectionString);
     }
 
     public async Task<int> ExecuteProcedureAsync(string procedureName, object? parameters = null)
@@ -37,7 +36,8 @@ public class ProcedureHelper : IProcedureHelper
         {
             _logger.Debug($"Executing stored procedure: {procedureName}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var rowsAffected = await connection.ExecuteAsync(
                 procedureName,
                 parameters,
@@ -60,7 +60,8 @@ public class ProcedureHelper : IProcedureHelper
         {
             _logger.Debug($"Executing stored procedure with result: {procedureName}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.QueryAsync<T>(
                 procedureName,
                 parameters,
@@ -83,7 +84,8 @@ public class ProcedureHelper : IProcedureHelper
         {
             _logger.Debug($"Executing stored procedure (single result): {procedureName}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.QueryFirstOrDefaultAsync<T>(
                 procedureName,
                 parameters,
@@ -106,7 +108,8 @@ public class ProcedureHelper : IProcedureHelper
         {
             _logger.Debug($"Executing stored procedure (scalar): {procedureName}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.ExecuteScalarAsync<T>(
                 procedureName,
                 parameters,
@@ -131,7 +134,8 @@ public class ProcedureHelper : IProcedureHelper
         {
             _logger.Debug($"Executing stored procedure with output parameters: {procedureName}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var rowsAffected = await connection.ExecuteAsync(
                 procedureName,
                 parameters,

@@ -33,7 +33,7 @@ pipeline {
             steps {
                 echo 'Restoring NuGet packages...'
                 sh '''
-                    dotnet restore ${SOLUTION_NAME}.sln
+                    dotnet restore ${SOLUTION_NAME}.slnx
                 '''
             }
         }
@@ -42,7 +42,7 @@ pipeline {
             steps {
                 echo "Building solution for ${params.ENVIRONMENT} environment..."
                 sh '''
-                    dotnet build ${SOLUTION_NAME}.sln \
+                    dotnet build ${SOLUTION_NAME}.slnx \
                         --configuration Release \
                         --no-restore \
                         /p:Version=${BUILD_VERSION}
@@ -54,7 +54,7 @@ pipeline {
             steps {
                 echo 'Running unit tests...'
                 sh '''
-                    dotnet test ${SOLUTION_NAME}.sln \
+                    dotnet test ${SOLUTION_NAME}.slnx \
                         --configuration Release \
                         --no-build \
                         --verbosity normal \

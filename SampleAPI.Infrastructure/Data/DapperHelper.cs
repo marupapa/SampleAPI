@@ -12,23 +12,22 @@ namespace SampleAPI.Infrastructure.Data;
 /// </summary>
 public class DapperHelper : IDapperHelper
 {
-    private readonly string _connectionString;
+    private readonly SecretsManagerHelper _secretsManager;
     private readonly ILoggerService _logger;
     private readonly int _commandTimeout;
 
     public DapperHelper(IConfiguration configuration, ILoggerService logger)
     {
         _logger = logger;
-        var secretsManager = new SecretsManagerHelper(configuration, logger);
-        _connectionString = secretsManager.GetConnectionStringAsync().GetAwaiter().GetResult();
+        _secretsManager = new SecretsManagerHelper(configuration, logger);
         
         var timeoutValue = configuration["DatabaseSettings:CommandTimeout"];
         _commandTimeout = !string.IsNullOrEmpty(timeoutValue) ? int.Parse(timeoutValue) : 30;
     }
 
-    private IDbConnection CreateConnection()
+    private static IDbConnection CreateConnection(string connectionString)
     {
-        return new SqlConnection(_connectionString);
+        return new SqlConnection(connectionString);
     }
 
     public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null, CommandType commandType = CommandType.Text)
@@ -37,7 +36,8 @@ public class DapperHelper : IDapperHelper
         {
             _logger.Debug($"Executing query: {sql}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.QueryAsync<T>(
                 sql,
                 parameters,
@@ -60,7 +60,8 @@ public class DapperHelper : IDapperHelper
         {
             _logger.Debug($"Executing query (first or default): {sql}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.QueryFirstOrDefaultAsync<T>(
                 sql,
                 parameters,
@@ -83,7 +84,8 @@ public class DapperHelper : IDapperHelper
         {
             _logger.Debug($"Executing query (single): {sql}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.QuerySingleAsync<T>(
                 sql,
                 parameters,
@@ -106,7 +108,8 @@ public class DapperHelper : IDapperHelper
         {
             _logger.Debug($"Executing command: {sql}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var rowsAffected = await connection.ExecuteAsync(
                 sql,
                 parameters,
@@ -129,7 +132,8 @@ public class DapperHelper : IDapperHelper
         {
             _logger.Debug($"Executing scalar: {sql}");
             
-            using var connection = CreateConnection();
+            var connectionString = await _secretsManager.GetConnectionStringAsync();
+            using var connection = CreateConnection(connectionString);
             var result = await connection.ExecuteScalarAsync<T>(
                 sql,
                 parameters,
@@ -148,7 +152,8 @@ public class DapperHelper : IDapperHelper
 
     public async Task<T> ExecuteInTransactionAsync<T>(Func<IDbConnection, IDbTransaction, Task<T>> action)
     {
-        using var connection = CreateConnection();
+        var connectionString = await _secretsManager.GetConnectionStringAsync();
+        using var connection = CreateConnection(connectionString);
         connection.Open();
         
         using var transaction = connection.BeginTransaction();

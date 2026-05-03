@@ -2,10 +2,12 @@ using SampleAPI.Handlers;
 using SampleAPI.Interfaces;
 using SampleAPI.Services;
 using SampleAPI.ApplicationCore.Interfaces;
+using SampleAPI.ApplicationCore.Models;
 using SampleAPI.Infrastructure.Data;
 using SampleAPI.Infrastructure.ExternalApi;
 using SampleAPI.Common.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
@@ -35,7 +37,29 @@ try
 
     // 認証設定
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-    var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+    var secretKey = jwtSettings["SecretKey"];
+    var issuer = jwtSettings["Issuer"];
+    var audience = jwtSettings["Audience"];
+
+    if (string.IsNullOrWhiteSpace(secretKey))
+    {
+        throw new InvalidOperationException("JWT SecretKey is not configured");
+    }
+
+    if (string.IsNullOrWhiteSpace(issuer))
+    {
+        throw new InvalidOperationException("JWT Issuer is not configured");
+    }
+
+    if (string.IsNullOrWhiteSpace(audience))
+    {
+        throw new InvalidOperationException("JWT Audience is not configured");
+    }
+
+    if (secretKey.StartsWith("YourSecretKey", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("JWT SecretKey must be provided from a secure source.");
+    }
 
     builder.Services.AddAuthentication(options =>
     {
@@ -50,8 +74,8 @@ try
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
+            ValidIssuer = issuer,
+            ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
@@ -114,8 +138,9 @@ try
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IDapperHelper, DapperHelper>();
     builder.Services.AddScoped<IProcedureHelper, ProcedureHelper>();
-    builder.Services.AddScoped<IExternalApiClient, ExternalApiClient>();
+    builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>();
     builder.Services.AddSingleton<ILoggerService, NLogService>();
+    builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
     // CORS設定
     builder.Services.AddCors(options =>
@@ -153,6 +178,18 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+
+    app.MapGet("/health", () => Results.Ok(new
+    {
+        status = "Healthy",
+        timestamp = DateTime.UtcNow
+    })).AllowAnonymous();
+
+    app.MapGet("/api/v1/health", () => Results.Ok(new
+    {
+        status = "Healthy",
+        timestamp = DateTime.UtcNow
+    })).AllowAnonymous();
 
     app.MapControllers();
 

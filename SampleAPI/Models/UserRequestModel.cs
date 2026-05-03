@@ -33,4 +33,11 @@ public class UserRequestModel
     /// </summary>
     [Phone(ErrorMessage = "Invalid phone number")]
     public string? PhoneNumber { get; set; }
+
+    /// <summary>
+    /// パスワード
+    /// </summary>
+    [Required(ErrorMessage = "Password is required")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long")]
+    public string Password { get; set; } = string.Empty;
 }

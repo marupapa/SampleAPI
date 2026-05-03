@@ -1,461 +1,256 @@
-# SampleAPI Solution (.slnx)
+# SampleAPI
 
-## プロジェクト概要
+SampleAPI is a .NET 10 Web API sample that uses a layered architecture, JWT Bearer authentication, Dapper-based SQL Server access, stored procedures, NLog, Swagger, and AWS Secrets Manager integration.
 
-SampleAPIは、.NET 10を使用したクリーンアーキテクチャベースのWebAPIソリューションです。**Visual Studio 2026の新しい.slnx形式**を採用し、レイヤー分離、依存性注入、セキュリティ、ロギング、データアクセスなどのベストプラクティスを実装しています。
+The solution uses the XML-based `.slnx` format.
 
-## ソリューション形式について
+## Requirements
 
-このプロジェクトは**.slnx形式**（XML-based Solution Format）を使用しています。
+- .NET 10 SDK
+- Visual Studio 2022 17.10 or later, Visual Studio 2026, Rider, or VS Code
+- SQL Server 2019 or later for local database testing
+- AWS credentials only for non-Local environments that read database secrets from AWS Secrets Manager
 
-### .slnx形式の利点
+## Solution Structure
 
-* ✅ **XMLベース** - 人間が読みやすく編集しやすい
-* ✅ **シンプルな構造** - 従来の.slnより簡潔
-* ✅ **Gitフレンドリー** - マージコンフリクトが少ない
-* ✅ **将来性** - Microsoftが推奨する新形式
-
-### 要件
-
-* **Visual Studio 2022 17.10以降** または **Visual Studio 2026**
-* 古いバージョンのVisual Studioでは開けません
-
-## アーキテクチャ
-
-このソリューションは4つのプロジェクトで構成されています:
-
-```
-SampleAPI.Solution/
-├── SampleAPI.slnx                      # XMLベースのソリューションファイル
-├── SampleAPI/                          # Web API プロジェクト
-├── SampleAPI.ApplicationCore/          # ビジネスロジック層
-├── SampleAPI.Common/                   # 共通ユーティリティ
-└── SampleAPI.Infrastructure/           # データアクセス層
-```
-
-### プロジェクト詳細
-
-#### 1. SampleAPI (Web API層)
-
-APIエンドポイントとHTTPリクエストハンドリングを担当します。
-
-**構造:**
-
-```
+```text
 SampleAPI/
-├── Areas/
-│   └── V1/
-│       └── Controllers/          # APIコントローラー (バージョン別)
-├── Handlers/
-│   ├── AuthenticationHandler.cs # APIキー認証ハンドラー
-│   └── GlobalExceptionHandler.cs # グローバル例外処理
-├── Interfaces/                   # サービスインターフェース定義
-├── Models/                       # リクエスト/レスポンスモデル
-├── Services/                     # ビジネスロジック実装
-├── Properties/
-│   └── launchSettings.json       # 起動設定
-├── appsettings.json              # 共通設定
-├── appsettings.{Environment}.json # 環境別設定
-├── nlog.config                   # NLogロギング設定
-└── Program.cs                    # アプリケーションエントリーポイント
+├── SampleAPI.slnx
+├── Database/
+│   └── InitializeDatabase.sql
+├── SampleAPI/
+│   ├── Areas/V1/Controllers/UserController.cs
+│   ├── Handlers/GlobalExceptionHandler.cs
+│   ├── Interfaces/IUserService.cs
+│   ├── Models/
+│   ├── Services/UserService.cs
+│   ├── Program.cs
+│   ├── appsettings.json
+│   ├── appsettings.Local.json
+│   ├── appsettings.Development.json
+│   ├── appsettings.Pre.json
+│   ├── appsettings.Live.json
+│   └── nlog.config
+├── SampleAPI.ApplicationCore/
+│   ├── Configurations/
+│   ├── Interfaces/IUserRepository.cs
+│   └── Models/User.cs
+├── SampleAPI.Common/
+│   ├── Extensions/
+│   ├── Helpers/
+│   └── Logging/
+└── SampleAPI.Infrastructure/
+    ├── Configurations/SecretsManagerHelper.cs
+    ├── Data/
+    │   ├── DapperHelper.cs
+    │   ├── ProcedureHelper.cs
+    │   └── UserRepository.cs
+    └── ExternalApi/
+        ├── ExternalApiClient.cs
+        └── IExternalApiClient.cs
 ```
 
-**主要機能:**
+## Architecture
 
-* RESTful APIエンドポイント
-* Swagger/OpenAPI ドキュメンテーション
-* APIキーベース認証 (Authorizationヘッダー)
-* グローバル例外ハンドリング
-* 環境別設定管理 (Local/Development/Pre/Live)
-* 統合ロギング (NLog)
+The solution is split into four projects.
 
-**エンドポイント例:**
+- `SampleAPI`: presentation layer. It contains controllers, DTOs, service implementations, middleware registration, Swagger, JWT setup, health endpoints, and application startup.
+- `SampleAPI.ApplicationCore`: application contracts and domain models.
+- `SampleAPI.Infrastructure`: SQL Server access, stored procedure execution, external HTTP API client, and AWS Secrets Manager integration.
+- `SampleAPI.Common`: shared logging, helpers, and extension methods.
 
-* `GET /api/v1/users` - 全ユーザー取得
-* `GET /api/v1/users/{id}` - ユーザー詳細取得
-* `POST /api/v1/users` - ユーザー作成
-* `PUT /api/v1/users/{id}` - ユーザー更新
-* `DELETE /api/v1/users/{id}` - ユーザー削除
+## Configuration
 
-#### 2. SampleAPI.ApplicationCore (アプリケーションコア層)
+`appsettings.json` contains shared configuration. Its `JwtSettings:SecretKey` value is intentionally empty and must be provided by environment-specific configuration or environment variables.
 
-ドメインモデル、インターフェース、設定クラスを定義します。
+`appsettings.Local.json` contains a local development JWT secret and a local SQL Server connection string example.
 
-**構造:**
+For `Development`, `Pre`, and `Live`, database connection strings are loaded through AWS Secrets Manager first. If Secrets Manager cannot be read, the application falls back to configured connection strings.
 
-```
-SampleAPI.ApplicationCore/
-├── Interfaces/
-│   ├── IUserService.cs           # ビジネスロジックインターフェース
-│   └── IUserRepository.cs        # データリポジトリインターフェース
-├── Models/
-│   └── User.cs                   # ドメインモデル
-└── Configurations/
-    └── AppSettings.cs            # アプリケーション設定クラス
-```
-
-#### 3. SampleAPI.Common (共通ライブラリ層)
-
-全プロジェクトで共有する共通機能を提供します。
-
-**構造:**
-
-```
-SampleAPI.Common/
-└── Logging/
-    ├── ILoggerService.cs         # ロギングインターフェース
-    └── LoggerService.cs          # NLogロギング実装
-```
-
-#### 4. SampleAPI.Infrastructure (インフラストラクチャ層)
-
-データアクセス、外部API接続、AWS統合を担当します。
-
-**構造:**
-
-```
-SampleAPI.Infrastructure/
-├── Data/
-│   ├── DapperRepository.cs           # Dapper SELECT操作用
-│   ├── StoredProcedureExecutor.cs    # ストアドプロシージャ実行用
-│   └── UserRepository.cs             # ユーザーデータリポジトリ
-├── ExternalApi/
-│   └── ExternalApiClient.cs          # 外部API接続クライアント
-└── Configurations/
-    └── SecretsManagerService.cs      # AWS Secrets Manager連携
-```
-
-## セットアップ手順
-
-### 前提条件
-
-* **.NET 10 SDK**
-* **Visual Studio 2022 17.10以降** または **Visual Studio 2026**
-* SQL Server (2019以降推奨)
-* AWS CLI (本番環境のみ)
-
-### 1. ソリューションを開く
-
-Visual Studio 2026で `SampleAPI.slnx` を開きます。
+Recommended environment variable names follow ASP.NET Core configuration conventions:
 
 ```bash
-# または コマンドラインから
-cd SampleAPI.Solution
-code .  # VS Codeの場合
+JwtSettings__SecretKey="replace-with-secure-secret"
+ConnectionStrings__DefaultConnection="Server=...;Database=...;User Id=...;Password=...;TrustServerCertificate=True;"
 ```
 
-### 2. データベースセットアップ
+## Local Database Setup
+
+Create the local database first:
 
 ```sql
--- データベース作成
 CREATE DATABASE SampleDB_Local;
 GO
 
 USE SampleDB_Local;
 GO
-
--- テーブル作成
-CREATE TABLE Users (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Username NVARCHAR(50) NOT NULL,
-    Email NVARCHAR(100) NOT NULL,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NULL
-);
-GO
-
--- ストアドプロシージャ作成
-CREATE PROCEDURE sp_InsertUser
-    @Username NVARCHAR(50),
-    @Email NVARCHAR(100),
-    @NewId INT OUTPUT
-AS
-BEGIN
-    INSERT INTO Users (Username, Email, CreatedAt)
-    VALUES (@Username, @Email, GETUTCDATE());
-    
-    SET @NewId = SCOPE_IDENTITY();
-END
-GO
-
-CREATE PROCEDURE sp_UpdateUser
-    @Id INT,
-    @Username NVARCHAR(50),
-    @Email NVARCHAR(100)
-AS
-BEGIN
-    UPDATE Users
-    SET Username = @Username,
-        Email = @Email,
-        UpdatedAt = GETUTCDATE()
-    WHERE Id = @Id;
-END
-GO
-
-CREATE PROCEDURE sp_DeleteUser
-    @Id INT
-AS
-BEGIN
-    DELETE FROM Users WHERE Id = @Id;
-END
-GO
 ```
 
-### 3. 設定ファイル編集
+Then run:
 
-`appsettings.Local.json` を編集してデータベース接続文字列を設定:
+```text
+Database/InitializeDatabase.sql
+```
+
+The script creates:
+
+- `Users` table
+- `sp_CreateUser`
+- `sp_UpdateUser`
+- `sp_DeleteUser`
+- sample users
+
+## Build
+
+From the repository root:
+
+```bash
+dotnet restore SampleAPI.slnx
+dotnet build SampleAPI.slnx
+```
+
+## Run Locally
+
+Using the launch profile:
+
+```bash
+dotnet run --project SampleAPI/SampleAPI.csproj --launch-profile http
+```
+
+Or explicitly:
+
+```bash
+ASPNETCORE_ENVIRONMENT=Local dotnet run --project SampleAPI/SampleAPI.csproj --urls http://127.0.0.1:5000
+```
+
+Swagger is enabled in `Local` and `Development` environments:
+
+```text
+http://localhost:5000/swagger
+```
+
+## Health Checks
+
+Health endpoints are anonymous and do not require JWT authentication:
+
+```bash
+curl http://localhost:5000/health
+curl http://localhost:5000/api/v1/health
+```
+
+Example response:
 
 ```json
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=SampleDB_Local;User Id=sa;Password=YourPassword;TrustServerCertificate=True;"
-  },
-  "Api": {
-    "Authentication": {
-      "ValidApiKeys": [
-        "local-test-key-12345"
-      ]
-    }
-  }
+  "status": "Healthy",
+  "timestamp": "2026-05-03T00:00:00Z"
 }
 ```
 
-### 4. 依存関係の復元とビルド
+## API Endpoints
 
-```bash
-dotnet restore
-dotnet build
+All user endpoints require a valid JWT Bearer token:
+
+```text
+Authorization: Bearer {jwt-token}
 ```
 
-### 5. 実行
+Available endpoints:
 
-Visual Studioで `Local` プロファイルを選択して実行、またはコマンドラインから:
+- `GET /api/v1/user`
+- `GET /api/v1/user/{id}`
+- `POST /api/v1/user`
+- `PUT /api/v1/user/{id}`
+- `DELETE /api/v1/user/{id}`
 
-```bash
-cd SampleAPI
-dotnet run --environment Local
-```
+User creation request:
 
-### 6. Swaggerで動作確認
-
-ブラウザで以下にアクセス:
-
-```
-https://localhost:7001
-```
-
-## APIの使用方法
-
-### 認証
-
-全エンドポイントでAuthorizationヘッダーが必要です:
-
-```
-Authorization: Bearer local-test-key-12345
-```
-
-### Swaggerでのテスト
-
-1. https://localhost:7001 にアクセス
-2. 「Authorize」ボタンをクリック
-3. `Bearer local-test-key-12345` を入力
-4. エンドポイントをテスト
-
-### curlでのテスト
-
-```bash
-# ユーザー一覧取得
-curl -X GET "https://localhost:7001/api/v1/users" \
-     -H "Authorization: Bearer local-test-key-12345"
-
-# ユーザー作成
-curl -X POST "https://localhost:7001/api/v1/users" \
-     -H "Authorization: Bearer local-test-key-12345" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "username": "testuser",
-       "email": "test@example.com"
-     }'
-```
-
-## ソリューション名の変更手順
-
-このテンプレートを別のプロジェクト名で使用する場合の手順です。
-
-### 例: `SampleAPI` → `SampleAPI2` に変更する場合
-
-#### 1. ソリューションファイルの変更
-
-```bash
-mv SampleAPI.slnx SampleAPI2.slnx
-```
-
-#### 2. プロジェクトのディレクトリ名を変更
-
-```bash
-mv SampleAPI SampleAPI2
-mv SampleAPI.ApplicationCore SampleAPI2.ApplicationCore
-mv SampleAPI.Common SampleAPI2.Common
-mv SampleAPI.Infrastructure SampleAPI2.Infrastructure
-```
-
-#### 3. 各プロジェクトファイル（.csproj）の名前を変更
-
-```bash
-mv SampleAPI2/SampleAPI.csproj SampleAPI2/SampleAPI2.csproj
-mv SampleAPI2.ApplicationCore/SampleAPI.ApplicationCore.csproj SampleAPI2.ApplicationCore/SampleAPI2.ApplicationCore.csproj
-mv SampleAPI2.Common/SampleAPI.Common.csproj SampleAPI2.Common/SampleAPI2.Common.csproj
-mv SampleAPI2.Infrastructure/SampleAPI.Infrastructure.csproj SampleAPI2.Infrastructure/SampleAPI2.Infrastructure.csproj
-```
-
-#### 4. .slnxファイル内のプロジェクト参照を更新
-
-`SampleAPI2.slnx` を開いて、以下のように変更:
-
-**変更前:**
-```xml
-<Project Path="SampleAPI\SampleAPI.csproj" />
-<Project Path="SampleAPI.ApplicationCore\SampleAPI.ApplicationCore.csproj" />
-<Project Path="SampleAPI.Common\SampleAPI.Common.csproj" />
-<Project Path="SampleAPI.Infrastructure\SampleAPI.Infrastructure.csproj" />
-```
-
-**変更後:**
-```xml
-<Project Path="SampleAPI2\SampleAPI2.csproj" />
-<Project Path="SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
-<Project Path="SampleAPI2.Common\SampleAPI2.Common.csproj" />
-<Project Path="SampleAPI2.Infrastructure\SampleAPI2.Infrastructure.csproj" />
-```
-
-#### 5. 各.csprojファイル内のプロジェクト参照を更新
-
-**SampleAPI2/SampleAPI2.csproj:**
-```xml
-<ItemGroup>
-  <ProjectReference Include="..\SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
-  <ProjectReference Include="..\SampleAPI2.Common\SampleAPI2.Common.csproj" />
-  <ProjectReference Include="..\SampleAPI2.Infrastructure\SampleAPI2.Infrastructure.csproj" />
-</ItemGroup>
-```
-
-**SampleAPI2.Infrastructure/SampleAPI2.Infrastructure.csproj:**
-```xml
-<ItemGroup>
-  <ProjectReference Include="..\SampleAPI2.ApplicationCore\SampleAPI2.ApplicationCore.csproj" />
-  <ProjectReference Include="..\SampleAPI2.Common\SampleAPI2.Common.csproj" />
-</ItemGroup>
-```
-
-#### 6. 名前空間（Namespace）の一括置換
-
-全ファイルで名前空間を検索・置換:
-
-```bash
-# Linuxの場合
-find . -type f -name "*.cs" -exec sed -i 's/namespace SampleAPI/namespace SampleAPI2/g' {} +
-find . -type f -name "*.cs" -exec sed -i 's/using SampleAPI/using SampleAPI2/g' {} +
-
-# Windowsの場合（PowerShell）
-Get-ChildItem -Recurse -Filter *.cs | ForEach-Object {
-    (Get-Content $_.FullName) -replace 'namespace SampleAPI', 'namespace SampleAPI2' | Set-Content $_.FullName
-    (Get-Content $_.FullName) -replace 'using SampleAPI', 'using SampleAPI2' | Set-Content $_.FullName
+```json
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "fullName": "Test User",
+  "phoneNumber": "090-1234-5678",
+  "password": "Password123!"
 }
 ```
 
-または、Visual Studioの「フォルダーを指定して置換」機能を使用:
-- `Ctrl + Shift + H`
-- 検索: `SampleAPI`
-- 置換: `SampleAPI2`
-- 対象: `*.cs`
+The password is hashed with ASP.NET Core `IPasswordHasher<User>` before being passed to the repository.
 
-#### 7. appsettings.jsonファイルの確認
+## Authentication
 
-必要に応じて、以下のファイルのプロジェクト固有の設定を更新:
-- `appsettings.json`
-- `appsettings.Local.json`
-- `appsettings.Development.json`
-- `appsettings.Pre.json`
-- `appsettings.Live.json`
+The application uses ASP.NET Core JWT Bearer authentication configured in `Program.cs`.
 
-#### 8. nlog.configの確認
+There is no custom sample authentication handler. A caller must provide a real JWT signed with `JwtSettings:SecretKey` and matching:
 
-`nlog.config` のログファイルパスを確認:
+- `JwtSettings:Issuer`
+- `JwtSettings:Audience`
 
-```xml
-<target name="file" xsi:type="File" fileName="logs/SampleAPI2-${shortdate}.log" />
+Swagger is configured with a Bearer security definition, so authenticated calls can be tested through the Swagger UI after a valid JWT is available.
+
+## Data Access
+
+Reads use Dapper SQL queries through `DapperHelper`.
+
+Writes use stored procedures through `ProcedureHelper`:
+
+- create: `sp_CreateUser`
+- update: `sp_UpdateUser`
+- delete: `sp_DeleteUser`
+
+Database connection strings are resolved asynchronously at query/procedure execution time instead of blocking during DI construction.
+
+## External API Client
+
+`ExternalApiClient` is registered as a typed HTTP client:
+
+```csharp
+builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>();
 ```
 
-#### 9. ビルドとテスト
+This avoids manually constructing `HttpClient` and lets ASP.NET Core manage the underlying handlers.
+
+## CI/CD
+
+`Jenkinsfile` uses the `.slnx` solution file:
 
 ```bash
-dotnet restore
-dotnet build
-dotnet run --project SampleAPI2 --environment Local
+dotnet restore SampleAPI.slnx
+dotnet build SampleAPI.slnx --configuration Release --no-restore
+dotnet test SampleAPI.slnx --configuration Release --no-build
 ```
 
-#### 10. データベースオブジェクトの更新（必要に応じて）
+The pipeline smoke tests call:
 
-ストアドプロシージャやテーブル名に `SampleAPI` プレフィックスがある場合は更新してください。
+- `/health`
+- `/api/v1/health`
 
-### チェックリスト
+## Environments
 
-変更後、以下を確認してください:
-
-- [ ] ソリューションファイル名が変更されている
-- [ ] 4つのプロジェクトディレクトリ名が変更されている
-- [ ] 4つの.csprojファイル名が変更されている
-- [ ] .slnx内のプロジェクトパスが更新されている
-- [ ] 各.csprojのProjectReference参照が更新されている
-- [ ] すべての.csファイルの名前空間が更新されている
-- [ ] appsettings系ファイルの設定が確認されている
-- [ ] nlog.configのログファイル名が確認されている
-- [ ] `dotnet build` が成功する
-- [ ] アプリケーションが正常に起動する
-
-## 環境管理
-
-4つの環境をサポート:
-
-| 環境 | 用途 | Secrets Manager | Swagger |
+| Environment | Purpose | Swagger | Database secret source |
 | --- | --- | --- | --- |
-| **Local** | ローカル開発 | 使用しない | 有効 |
-| **Development** | 開発環境 | 使用する | 有効 |
-| **Pre** | ステージング | 使用する | 無効 |
-| **Live** | 本番環境 | 使用する | 無効 |
+| Local | Local development | Enabled | `appsettings.Local.json` |
+| Development | Shared development | Enabled | AWS Secrets Manager, then fallback config |
+| Pre | Staging | Disabled | AWS Secrets Manager, then fallback config |
+| Live | Production | Disabled | AWS Secrets Manager, then fallback config |
 
-## AWS Secrets Manager設定 (本番環境)
+## Project Highlights
 
-```bash
-aws secretsmanager create-secret \
-    --name sampleapi/live/database/connectionstring \
-    --description "SampleAPI Live Database Connection String" \
-    --secret-string '{"connectionString":"Server=xxx;Database=xxx;User Id=xxx;Password=xxx;"}' \
-    --region ap-northeast-1
-```
+- .NET 10
+- `.slnx` solution format
+- Layered architecture
+- JWT Bearer authentication
+- Swagger/OpenAPI
+- Global exception handling
+- NLog logging
+- Dapper reads
+- Stored procedure writes
+- AWS Secrets Manager support
+- Typed `HttpClientFactory` external API client
+- Anonymous health endpoints for deployment checks
 
-## プロジェクトの特徴
+## Current Notes
 
-✅ **.slnx形式** - 最新のXMLベースソリューション  
-✅ **クリーンアーキテクチャ** - レイヤー分離設計  
-✅ **Dapper + ストアドプロシージャ** - 高速データアクセス  
-✅ **APIキー認証** - セキュアなエンドポイント  
-✅ **Swagger統合** - 自動APIドキュメント  
-✅ **NLogロギング** - 統合ロギング  
-✅ **環境別設定** - 4環境対応  
-✅ **AWS Secrets Manager** - セキュアな接続文字列管理
-
-## ライセンス
-
-このプロジェクトはサンプルコードです。自由に使用・修正できます。
-
-## 変更履歴
-
-### v1.0.0 (2026-01-15)
-
-* 初回リリース (.slnx形式)
-* 基本的なCRUD API実装
-* 認証/認可機能
-* ロギング統合
-* AWS Secrets Manager統合
-* 環境別設定管理
+- No test project is currently included.
+- The API validates JWTs but does not currently provide a login/token issuing endpoint.
+- Configure production JWT secrets outside source-controlled files.

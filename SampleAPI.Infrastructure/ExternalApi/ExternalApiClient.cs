@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using SampleAPI.Common.Logging;
 using SampleAPI.Common.Helpers;
-using System.Net;
 using System.Text;
 
 namespace SampleAPI.Infrastructure.ExternalApi;
@@ -9,25 +8,21 @@ namespace SampleAPI.Infrastructure.ExternalApi;
 /// <summary>
 /// 外部APIクライアント実装
 /// </summary>
-public class ExternalApiClient : IExternalApiClient, IDisposable
+public class ExternalApiClient : IExternalApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILoggerService _logger;
-    private readonly string _baseUrl;
-    private readonly int _timeout;
 
-    public ExternalApiClient(IConfiguration configuration, ILoggerService logger)
+    public ExternalApiClient(HttpClient httpClient, IConfiguration configuration, ILoggerService logger)
     {
         _logger = logger;
-        _baseUrl = configuration["ExternalApi:BaseUrl"] 
+        var baseUrl = configuration["ExternalApi:BaseUrl"] 
             ?? throw new InvalidOperationException("ExternalApi:BaseUrl not configured");
-        _timeout = configuration.GetValue<int>("ExternalApi:Timeout", 30);
+        var timeout = configuration.GetValue<int>("ExternalApi:Timeout", 30);
 
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(_baseUrl),
-            Timeout = TimeSpan.FromSeconds(_timeout)
-        };
+        _httpClient = httpClient;
+        _httpClient.BaseAddress = new Uri(baseUrl);
+        _httpClient.Timeout = TimeSpan.FromSeconds(timeout);
 
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "SampleAPI/1.0");
     }
@@ -193,11 +188,5 @@ public class ExternalApiClient : IExternalApiClient, IDisposable
             _logger.Error(ex, $"Error deserializing response: {content}");
             throw;
         }
-    }
-
-    public void Dispose()
-    {
-        _httpClient?.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

@@ -3,6 +3,7 @@ using SampleAPI.Models;
 using SampleAPI.ApplicationCore.Interfaces;
 using SampleAPI.ApplicationCore.Models;
 using SampleAPI.Common.Logging;
+using Microsoft.AspNetCore.Identity;
 
 namespace SampleAPI.Services;
 
@@ -13,11 +14,16 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly ILoggerService _logger;
+    private readonly IPasswordHasher<User> _passwordHasher;
 
-    public UserService(IUserRepository userRepository, ILoggerService logger)
+    public UserService(
+        IUserRepository userRepository, 
+        ILoggerService logger,
+        IPasswordHasher<User> passwordHasher)
     {
         _userRepository = userRepository;
         _logger = logger;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<IEnumerable<UserResponseModel>> GetAllUsersAsync()
@@ -67,6 +73,9 @@ public class UserService : IUserService
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
+
+            // パスワードのハッシュ化
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
             var createdUser = await _userRepository.CreateAsync(user);
             
