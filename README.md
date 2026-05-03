@@ -1,17 +1,17 @@
 # SampleAPI
 
-SampleAPI is a .NET 10 Web API sample that uses a layered architecture, JWT Bearer authentication, Dapper-based SQL Server access, stored procedures, NLog, Swagger, and AWS Secrets Manager integration.
+SampleAPIは、レイヤードアーキテクチャ、JWT Bearer認証、DapperによるSQL Serverアクセス、ストアドプロシージャ、NLog、Swagger、AWS Secrets Manager連携を使用した .NET 10 Web API サンプルです。
 
-The solution uses the XML-based `.slnx` format.
+このソリューションは、XMLベースの `.slnx` 形式を使用しています。
 
-## Requirements
+## 要件
 
 - .NET 10 SDK
-- Visual Studio 2022 17.10 or later, Visual Studio 2026, Rider, or VS Code
-- SQL Server 2019 or later for local database testing
-- AWS credentials only for non-Local environments that read database secrets from AWS Secrets Manager
+- Visual Studio 2022 17.10以降、Visual Studio 2026、Rider、または VS Code
+- ローカルDB検証用の SQL Server 2019以降
+- AWS Secrets ManagerからDBシークレットを読み取る非Local環境ではAWS認証情報
 
-## Solution Structure
+## ソリューション構成
 
 ```text
 SampleAPI/
@@ -50,33 +50,33 @@ SampleAPI/
         └── IExternalApiClient.cs
 ```
 
-## Architecture
+## アーキテクチャ
 
-The solution is split into four projects.
+このソリューションは4つのプロジェクトに分かれています。
 
-- `SampleAPI`: presentation layer. It contains controllers, DTOs, service implementations, middleware registration, Swagger, JWT setup, health endpoints, and application startup.
-- `SampleAPI.ApplicationCore`: application contracts and domain models.
-- `SampleAPI.Infrastructure`: SQL Server access, stored procedure execution, external HTTP API client, and AWS Secrets Manager integration.
-- `SampleAPI.Common`: shared logging, helpers, and extension methods.
+- `SampleAPI`: プレゼンテーション層です。コントローラー、DTO、サービス実装、ミドルウェア登録、Swagger、JWT設定、ヘルスチェックエンドポイント、アプリケーション起動処理を含みます。
+- `SampleAPI.ApplicationCore`: アプリケーションの契約とドメインモデルを定義します。
+- `SampleAPI.Infrastructure`: SQL Serverアクセス、ストアドプロシージャ実行、外部HTTP APIクライアント、AWS Secrets Manager連携を担当します。
+- `SampleAPI.Common`: ロギング、ヘルパー、拡張メソッドなどの共通機能を提供します。
 
-## Configuration
+## 設定
 
-`appsettings.json` contains shared configuration. Its `JwtSettings:SecretKey` value is intentionally empty and must be provided by environment-specific configuration or environment variables.
+`appsettings.json` には共通設定を配置しています。`JwtSettings:SecretKey` は意図的に空にしており、環境別設定または環境変数から指定する必要があります。
 
-`appsettings.Local.json` contains a local development JWT secret and a local SQL Server connection string example.
+`appsettings.Local.json` には、ローカル開発用のJWTシークレットとSQL Server接続文字列の例を配置しています。
 
-For `Development`, `Pre`, and `Live`, database connection strings are loaded through AWS Secrets Manager first. If Secrets Manager cannot be read, the application falls back to configured connection strings.
+`Development`、`Pre`、`Live` では、まずAWS Secrets ManagerからDB接続文字列を読み取ります。Secrets Managerの読み取りに失敗した場合は、設定ファイル上の接続文字列にフォールバックします。
 
-Recommended environment variable names follow ASP.NET Core configuration conventions:
+環境変数名は、ASP.NET Coreの設定規約に合わせて次の形式を推奨します。
 
 ```bash
 JwtSettings__SecretKey="replace-with-secure-secret"
 ConnectionStrings__DefaultConnection="Server=...;Database=...;User Id=...;Password=...;TrustServerCertificate=True;"
 ```
 
-## Local Database Setup
+## ローカルDBセットアップ
 
-Create the local database first:
+まずローカルDBを作成します。
 
 ```sql
 CREATE DATABASE SampleDB_Local;
@@ -86,59 +86,59 @@ USE SampleDB_Local;
 GO
 ```
 
-Then run:
+その後、次のスクリプトを実行します。
 
 ```text
 Database/InitializeDatabase.sql
 ```
 
-The script creates:
+このスクリプトは以下を作成します。
 
-- `Users` table
+- `Users` テーブル
 - `sp_CreateUser`
 - `sp_UpdateUser`
 - `sp_DeleteUser`
-- sample users
+- サンプルユーザー
 
-## Build
+## ビルド
 
-From the repository root:
+リポジトリルートから実行します。
 
 ```bash
 dotnet restore SampleAPI.slnx
 dotnet build SampleAPI.slnx
 ```
 
-## Run Locally
+## ローカル実行
 
-Using the launch profile:
+起動プロファイルを使用する場合:
 
 ```bash
 dotnet run --project SampleAPI/SampleAPI.csproj --launch-profile http
 ```
 
-Or explicitly:
+明示的に指定する場合:
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Local dotnet run --project SampleAPI/SampleAPI.csproj --urls http://127.0.0.1:5000
 ```
 
-Swagger is enabled in `Local` and `Development` environments:
+Swaggerは `Local` と `Development` 環境で有効です。
 
 ```text
 http://localhost:5000/swagger
 ```
 
-## Health Checks
+## ヘルスチェック
 
-Health endpoints are anonymous and do not require JWT authentication:
+ヘルスチェックエンドポイントは匿名アクセス可能で、JWT認証は不要です。
 
 ```bash
 curl http://localhost:5000/health
 curl http://localhost:5000/api/v1/health
 ```
 
-Example response:
+レスポンス例:
 
 ```json
 {
@@ -147,15 +147,15 @@ Example response:
 }
 ```
 
-## API Endpoints
+## APIエンドポイント
 
-All user endpoints require a valid JWT Bearer token:
+ユーザー関連エンドポイントでは、有効なJWT Bearerトークンが必要です。
 
 ```text
 Authorization: Bearer {jwt-token}
 ```
 
-Available endpoints:
+利用可能なエンドポイント:
 
 - `GET /api/v1/user`
 - `GET /api/v1/user/{id}`
@@ -163,7 +163,7 @@ Available endpoints:
 - `PUT /api/v1/user/{id}`
 - `DELETE /api/v1/user/{id}`
 
-User creation request:
+ユーザー作成リクエスト:
 
 ```json
 {
@@ -175,44 +175,44 @@ User creation request:
 }
 ```
 
-The password is hashed with ASP.NET Core `IPasswordHasher<User>` before being passed to the repository.
+パスワードは、リポジトリへ渡される前に ASP.NET Core の `IPasswordHasher<User>` でハッシュ化されます。
 
-## Authentication
+## 認証
 
-The application uses ASP.NET Core JWT Bearer authentication configured in `Program.cs`.
+このアプリケーションは、`Program.cs` で設定された ASP.NET Core のJWT Bearer認証を使用します。
 
-There is no custom sample authentication handler. A caller must provide a real JWT signed with `JwtSettings:SecretKey` and matching:
+カスタムのサンプル認証ハンドラーはありません。呼び出し元は、`JwtSettings:SecretKey` で署名され、次の値と一致する実際のJWTを指定する必要があります。
 
 - `JwtSettings:Issuer`
 - `JwtSettings:Audience`
 
-Swagger is configured with a Bearer security definition, so authenticated calls can be tested through the Swagger UI after a valid JWT is available.
+SwaggerにはBearerセキュリティ定義が設定されているため、有効なJWTがあればSwagger UIから認証付きAPIをテストできます。
 
-## Data Access
+## データアクセス
 
-Reads use Dapper SQL queries through `DapperHelper`.
+読み取り処理は、`DapperHelper` 経由のDapper SQLクエリを使用します。
 
-Writes use stored procedures through `ProcedureHelper`:
+書き込み処理は、`ProcedureHelper` 経由でストアドプロシージャを使用します。
 
-- create: `sp_CreateUser`
-- update: `sp_UpdateUser`
-- delete: `sp_DeleteUser`
+- 作成: `sp_CreateUser`
+- 更新: `sp_UpdateUser`
+- 削除: `sp_DeleteUser`
 
-Database connection strings are resolved asynchronously at query/procedure execution time instead of blocking during DI construction.
+DB接続文字列は、DI構築時にブロックせず、クエリまたはプロシージャ実行時に非同期で解決されます。
 
-## External API Client
+## 外部APIクライアント
 
-`ExternalApiClient` is registered as a typed HTTP client:
+`ExternalApiClient` はtyped HTTP clientとして登録されています。
 
 ```csharp
 builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>();
 ```
 
-This avoids manually constructing `HttpClient` and lets ASP.NET Core manage the underlying handlers.
+これにより、`HttpClient` を手動生成せず、ASP.NET Coreに基盤となるハンドラー管理を任せられます。
 
 ## CI/CD
 
-`Jenkinsfile` uses the `.slnx` solution file:
+`Jenkinsfile` は `.slnx` ソリューションファイルを使用します。
 
 ```bash
 dotnet restore SampleAPI.slnx
@@ -220,37 +220,37 @@ dotnet build SampleAPI.slnx --configuration Release --no-restore
 dotnet test SampleAPI.slnx --configuration Release --no-build
 ```
 
-The pipeline smoke tests call:
+パイプラインのスモークテストでは、次のエンドポイントを呼び出します。
 
 - `/health`
 - `/api/v1/health`
 
-## Environments
+## 環境
 
-| Environment | Purpose | Swagger | Database secret source |
+| 環境 | 用途 | Swagger | DBシークレット取得元 |
 | --- | --- | --- | --- |
-| Local | Local development | Enabled | `appsettings.Local.json` |
-| Development | Shared development | Enabled | AWS Secrets Manager, then fallback config |
-| Pre | Staging | Disabled | AWS Secrets Manager, then fallback config |
-| Live | Production | Disabled | AWS Secrets Manager, then fallback config |
+| Local | ローカル開発 | 有効 | `appsettings.Local.json` |
+| Development | 共有開発環境 | 有効 | AWS Secrets Manager、その後フォールバック設定 |
+| Pre | ステージング | 無効 | AWS Secrets Manager、その後フォールバック設定 |
+| Live | 本番 | 無効 | AWS Secrets Manager、その後フォールバック設定 |
 
-## Project Highlights
+## プロジェクトの特徴
 
 - .NET 10
-- `.slnx` solution format
-- Layered architecture
-- JWT Bearer authentication
+- `.slnx` ソリューション形式
+- レイヤードアーキテクチャ
+- JWT Bearer認証
 - Swagger/OpenAPI
-- Global exception handling
-- NLog logging
-- Dapper reads
-- Stored procedure writes
-- AWS Secrets Manager support
-- Typed `HttpClientFactory` external API client
-- Anonymous health endpoints for deployment checks
+- グローバル例外ハンドリング
+- NLogロギング
+- Dapperによる読み取り
+- ストアドプロシージャによる書き込み
+- AWS Secrets Manager対応
+- typed `HttpClientFactory` 外部APIクライアント
+- デプロイ確認用の匿名ヘルスチェックエンドポイント
 
-## Current Notes
+## 現在の注意点
 
-- No test project is currently included.
-- The API validates JWTs but does not currently provide a login/token issuing endpoint.
-- Configure production JWT secrets outside source-controlled files.
+- 現時点ではテストプロジェクトは含まれていません。
+- APIはJWTを検証しますが、ログインまたはトークン発行エンドポイントはまだ提供していません。
+- 本番用のJWTシークレットは、ソース管理対象外で設定してください。
